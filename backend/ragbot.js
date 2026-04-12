@@ -5,27 +5,48 @@ import Groq from 'groq-sdk';
 import { tavily } from '@tavily/core';
 import NodeCache from 'node-cache';
 import fs from 'fs';
-import { createRequire } from 'module';          // ✅ add this
-const require = createRequire(import.meta.url);   // ✅ add this
-const pdfParse = require('pdf-parse');            // ✅ change this
+import path from 'path';
+import User from './models/User.js';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY });
 const cache = new NodeCache({ stdTTL: 60 * 60 * 24 });
 
-// rest of the file stays the same...
-
-// Store PDF text per user
 export const userPDFContent = new Map();
 
 export async function loadPDFForUser(userId, filePath) {
     console.log(`📄 Loading PDF for user ${userId}...`);
-    const buffer = fs.readFileSync(filePath);
-    const parsed = await pdfParse(buffer);
-    const text = parsed.text.slice(0, 15000);
-    userPDFContent.set(userId, text);
-    console.log(`✅ PDF loaded: ${text.length} characters`);
-    return text.length;
+
+    try {
+        // ✅ pdfjs-dist fully supports ES modules
+        const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+
+        const buffer = fs.readFileSync(filePath);
+        const uint8Array = new Uint8Array(buffer);
+
+        const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+        const pdf = await loadingTask.promise;
+
+        console.log(`📖 PDF has ${pdf.numPages} pages`);
+
+        let text = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const pageText = content.items.map((item) => item.str).join(' ');
+            text += pageText + '\n';
+        }
+
+        text = text.slice(0, 15000);
+        userPDFContent.set(userId, text);
+        await User.findByIdAndUpdate(userId, { pdfText: text });
+        console.log('✅ PDF saved to MongoDB');
+        console.log(`✅ PDF loaded: ${text.length} characters`);
+        return text.length;
+    } catch (err) {
+        console.error('❌ PDF parse error:', err.message);
+        throw new Error('PDF parsing failed: ' + err.message);
+    }
 }
 
 export function clearPDFForUser(userId) {
@@ -41,11 +62,18 @@ export async function generate(userMessage, threadId, userName = '', userMemory 
             content: `You are a smart personal assistant.
 ${userName ? `The user's name is: ${userName}.` : ''}
 ${userMemory ? `Things you know about this user:\n${userMemory}` : ''}
-${pdfContent ? `The user has uploaded a PDF. Its content is:\n\n${pdfContent}\n\nAnswer questions about it using this content.` : ''}
+${pdfContent ? `The user has uploaded a PDF document. Here is its content:\n\n${pdfContent}\n\nUse this content to answer questions about the document.` : ''}
 
 If you know the answer, reply directly.
-If the answer needs real-time info, use the webSearch tool.
-Current date and time: ${new Date().toUTCString()}`,
+If the answer needs real-time or current info, use the webSearch tool.
+If the user asks about their uploaded document, use the PDF content above.
+Do not mention tools unless necessary.
+Current date and time: ${(() => {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istTime = new Date(now.getTime() + istOffset);
+    return istTime.toISOString().replace('T', ' ').replace('Z', '') + ' IST';
+})()}`,
         },
     ];
 
