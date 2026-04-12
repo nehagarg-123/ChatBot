@@ -383,7 +383,7 @@ export default function ChatPage({ user, token, onLogout }) {
               placeholder={
                 activePDF
                   ? `Ask about "${activePDF}" or anything else...`
-                  : 'Message ChatDPT... (📎 to upload PDF or drag & drop here)'
+                  : 'Message ChatGPT... (📎 to upload PDF or drag & drop here)'
               }
               rows={2}
               className="w-full resize-none bg-transparent outline-none text-sm text-white placeholder-neutral-600 px-4 pt-3 pb-1"
