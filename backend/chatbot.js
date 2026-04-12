@@ -37,7 +37,12 @@ export async function generate(userMessage, threadId) {
                     Q: Tell me the latest IT news.
                     A: (use the search tool to get the latest news)
 
-                    current date and time: ${new Date().toUTCString()}`,  // ✅ Fixed: was toUTCString (missing parentheses)
+                  current date and time: ${(() => {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istTime = new Date(now.getTime() + istOffset);
+    return istTime.toISOString().replace('T', ' ').replace('Z', '') + ' IST';
+})()}`,
         },
     ];
 
