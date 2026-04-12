@@ -268,7 +268,7 @@ export default function ChatPage({ user, token, onLogout }) {
             </div>
           </div>
           <p className="text-center text-neutral-700 text-xs mt-2">
-            Press Enter to send · Shift+Enter for new line
+            Press Enter to send · Shift+Enter for new line  -->NEHA
           </p>
         </div>
       </div>
