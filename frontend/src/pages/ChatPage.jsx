@@ -279,7 +279,7 @@ export default function ChatPage({ user, token, onLogout }) {
           >
             ☰
           </button>
-          <h1 className="font-semibold text-base">ChatDPT</h1>
+          <h1 className="font-semibold text-base">ChatGPT</h1>
 
           {/* Active PDF badge */}
           {activePDF && (
