@@ -2,13 +2,13 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 async function request(path, options = {}) {
     const headers = {
-        'Content-Type': 'application/json',  // ✅ this must be set
+        'Content-Type': 'application/json',
         ...options.headers,
     };
 
     const res = await fetch(`${BASE_URL}${path}`, {
         ...options,
-        headers,  // ✅ headers must come AFTER ...options spread
+        headers,
     });
 
     const data = await res.json();
@@ -22,6 +22,12 @@ export const api = {
 
     login: (body) =>
         request('/api/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+
+    forgotPassword: (email) =>
+        request('/api/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+
+    resetPassword: (token, password) =>
+        request(`/api/auth/reset-password/${token}`, { method: 'POST', body: JSON.stringify({ password }) }),
 
     sendMessage: (token, body) =>
         request('/api/chat', {
