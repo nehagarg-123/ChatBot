@@ -3,11 +3,11 @@ import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema(
     {
-        name: { type: String, required: true, trim: true },
-        email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+        name:     { type: String, required: true, trim: true },
+        email:    { type: String, required: true, unique: true, lowercase: true, trim: true },
         password: { type: String, required: true, minlength: 6 },
-        memory: { type: String, default: '' },
-        pdfText: { type: String, default: '' },
+        memory:   { type: String, default: '' },
+        pdfText:  { type: String, default: '' },
 
         // ── Forgot-password fields ──────────────────────────────────────────
         resetPasswordToken:   { type: String, default: null },
@@ -28,4 +28,5 @@ userSchema.methods.comparePassword = function (candidate) {
     return bcrypt.compare(candidate, this.password);
 };
 
-export default mongoose.model('User', userSchema);
+// ── Prevent OverwriteModelError on hot-reload / multiple imports ────────────
+export default mongoose.models.User || mongoose.model('User', userSchema);
