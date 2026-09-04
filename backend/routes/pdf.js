@@ -42,9 +42,14 @@ router.post('/upload', authMiddleware, upload.single('pdf'), async (req, res) =>
     }
 });
 
-router.delete('/clear', authMiddleware, (req, res) => {
-    clearPDFForUser(req.userId);   // ✅ fixed — no more require()
-    res.json({ message: 'PDF cleared.' });
+router.delete('/clear', authMiddleware, async (req, res) => {
+    try {
+        await clearPDFForUser(req.userId);
+        res.json({ message: 'PDF cleared.' });
+   } catch (err) {
+        console.error('Clear PDF error:', err.message);
+        res.status(500).json({ message: err.message });
+    }
 });
 
 export default router;
